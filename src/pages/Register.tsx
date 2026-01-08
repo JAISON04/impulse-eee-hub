@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { ArrowLeft, User, School, Calendar, Phone, Mail, IndianRupee, Zap } from "lucide-react";
 import { useForm } from "react-hook-form";
@@ -13,6 +13,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
+import { addRegistration, generateTransactionId } from "@/lib/firestore";
 
 const registrationSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters").max(100),
@@ -37,9 +39,18 @@ const eventsInfo: Record<string, { title: string; price: number }> = {
   "treasure-hunt": { title: "Electro Treasure Hunt", price: 100 },
 };
 
+const yearLabels: Record<string, string> = {
+  "1": "1st Year",
+  "2": "2nd Year",
+  "3": "3rd Year",
+  "4": "4th Year",
+};
+
 const Register = () => {
   const { eventId } = useParams();
   const { toast } = useToast();
+  const { user } = useAuth();
+  const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
   
   const event = eventId ? eventsInfo[eventId] : null;
@@ -51,20 +62,54 @@ const Register = () => {
     formState: { errors },
   } = useForm<RegistrationFormData>({
     resolver: zodResolver(registrationSchema),
+    defaultValues: {
+      email: user?.email || "",
+      name: user?.displayName || "",
+    },
   });
 
   const onSubmit = async (data: RegistrationFormData) => {
+    if (!event || !eventId) return;
+    
     setIsSubmitting(true);
     
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1500));
-    
-    toast({
-      title: "Registration Submitted!",
-      description: "You will be redirected to payment shortly.",
-    });
-    
-    setIsSubmitting(false);
+    try {
+      // Save registration to Firestore
+      const registrationId = await addRegistration({
+        name: data.name,
+        email: data.email,
+        phone: `+91 ${data.phone}`,
+        college: data.college,
+        year: yearLabels[data.year] || data.year,
+        event: event.title,
+        eventId: eventId,
+        amount: event.price,
+        paymentStatus: 'pending',
+        transactionId: generateTransactionId(),
+        userId: user?.uid,
+      });
+      
+      toast({
+        title: "Registration Successful!",
+        description: "You will be redirected to payment shortly.",
+      });
+      
+      // In production, redirect to payment gateway here
+      // For now, simulate a successful payment after delay
+      setTimeout(() => {
+        navigate('/events');
+      }, 2000);
+      
+    } catch (error) {
+      console.error('Registration error:', error);
+      toast({
+        title: "Registration Failed",
+        description: "Something went wrong. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   if (!event) {

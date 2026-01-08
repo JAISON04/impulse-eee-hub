@@ -12,6 +12,7 @@ import {
   Search,
   Filter,
   Eye,
+  RefreshCw,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -31,94 +32,29 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { useToast } from '@/hooks/use-toast';
-
-// Mock registration data (in production, fetch from Firebase)
-const mockRegistrations = [
-  {
-    id: '1',
-    name: 'Arun Kumar',
-    email: 'arun@college.edu',
-    phone: '+91 9876543210',
-    college: 'Anna University',
-    year: '3rd Year',
-    event: 'Circuit Design Challenge',
-    eventId: 'circuit-design',
-    amount: 200,
-    paymentStatus: 'completed',
-    registeredAt: '2025-01-20T10:30:00Z',
-    transactionId: 'TXN001234',
-  },
-  {
-    id: '2',
-    name: 'Priya Sharma',
-    email: 'priya@college.edu',
-    phone: '+91 9876543211',
-    college: 'IIT Madras',
-    year: '2nd Year',
-    event: 'Power Grid Simulation',
-    eventId: 'power-grid',
-    amount: 250,
-    paymentStatus: 'completed',
-    registeredAt: '2025-01-21T14:15:00Z',
-    transactionId: 'TXN001235',
-  },
-  {
-    id: '3',
-    name: 'Rahul Menon',
-    email: 'rahul@college.edu',
-    phone: '+91 9876543212',
-    college: 'VIT Chennai',
-    year: '4th Year',
-    event: 'Technical Paper Presentation',
-    eventId: 'paper-presentation',
-    amount: 150,
-    paymentStatus: 'pending',
-    registeredAt: '2025-01-22T09:00:00Z',
-    transactionId: 'TXN001236',
-  },
-  {
-    id: '4',
-    name: 'Sneha Reddy',
-    email: 'sneha@college.edu',
-    phone: '+91 9876543213',
-    college: 'SRM University',
-    year: '3rd Year',
-    event: 'Robotics Workshop',
-    eventId: 'robotics-workshop',
-    amount: 300,
-    paymentStatus: 'completed',
-    registeredAt: '2025-01-22T11:45:00Z',
-    transactionId: 'TXN001237',
-  },
-  {
-    id: '5',
-    name: 'Karthik Naidu',
-    email: 'karthik@college.edu',
-    phone: '+91 9876543214',
-    college: 'BITS Pilani',
-    year: '2nd Year',
-    event: 'Circuit Design Challenge',
-    eventId: 'circuit-design',
-    amount: 200,
-    paymentStatus: 'completed',
-    registeredAt: '2025-01-23T16:20:00Z',
-    transactionId: 'TXN001238',
-  },
-];
+import { subscribeToRegistrations, Registration } from '@/lib/firestore';
+import { Timestamp } from 'firebase/firestore';
 
 const events = [
   { id: 'all', name: 'All Events' },
-  { id: 'circuit-design', name: 'Circuit Design Challenge' },
-  { id: 'power-grid', name: 'Power Grid Simulation' },
-  { id: 'paper-presentation', name: 'Technical Paper Presentation' },
-  { id: 'robotics-workshop', name: 'Robotics Workshop' },
+  { id: 'circuit-debugging', name: 'Circuit Debugging' },
+  { id: 'code-surge', name: 'Code Surge' },
+  { id: 'innovolt', name: 'InnoVolt' },
+  { id: 'robo-war', name: 'Robo War' },
+  { id: 'tech-quiz', name: 'ElectroQuiz' },
+  { id: 'project-expo', name: 'Project Expo' },
+  { id: 'power-systems', name: 'Power Grid Challenge' },
+  { id: 'safety-protocol', name: 'Safety First' },
+  { id: 'speed-wiring', name: 'Speed Wiring' },
+  { id: 'treasure-hunt', name: 'Electro Treasure Hunt' },
 ];
 
 const AdminDashboard = () => {
-  const [registrations, setRegistrations] = useState(mockRegistrations);
+  const [registrations, setRegistrations] = useState<Registration[]>([]);
+  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedEvent, setSelectedEvent] = useState('all');
-  const [selectedRegistration, setSelectedRegistration] = useState<typeof mockRegistrations[0] | null>(null);
+  const [selectedRegistration, setSelectedRegistration] = useState<Registration | null>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -127,7 +63,16 @@ const AdminDashboard = () => {
     const isAdmin = sessionStorage.getItem('isAdmin');
     if (!isAdmin) {
       navigate('/admin');
+      return;
     }
+
+    // Subscribe to real-time updates from Firestore
+    const unsubscribe = subscribeToRegistrations((data) => {
+      setRegistrations(data);
+      setLoading(false);
+    });
+
+    return () => unsubscribe();
   }, [navigate]);
 
   const handleLogout = () => {
@@ -153,10 +98,20 @@ const AdminDashboard = () => {
   const totalAmount = registrations
     .filter((r) => r.paymentStatus === 'completed')
     .reduce((sum, r) => sum + r.amount, 0);
+  
   const eventCounts = events.slice(1).map((event) => ({
     ...event,
     count: registrations.filter((r) => r.eventId === event.id).length,
   }));
+
+  const formatDate = (timestamp: Timestamp | undefined) => {
+    if (!timestamp) return 'N/A';
+    try {
+      return timestamp.toDate().toLocaleString();
+    } catch {
+      return 'N/A';
+    }
+  };
 
   const exportToCSV = () => {
     const headers = ['Name', 'Email', 'Phone', 'College', 'Year', 'Event', 'Amount', 'Payment Status', 'Transaction ID', 'Registered At'];
@@ -170,7 +125,7 @@ const AdminDashboard = () => {
       reg.amount,
       reg.paymentStatus,
       reg.transactionId,
-      new Date(reg.registeredAt).toLocaleString(),
+      formatDate(reg.registeredAt),
     ]);
 
     const csvContent = [
@@ -190,6 +145,17 @@ const AdminDashboard = () => {
     });
   };
 
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <RefreshCw className="w-8 h-8 text-primary animate-spin mx-auto mb-4" />
+          <p className="text-muted-foreground font-mono">Loading registrations...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
@@ -205,7 +171,7 @@ const AdminDashboard = () => {
                   Admin Dashboard
                 </h1>
                 <p className="text-muted-foreground text-sm font-mono">
-                  IMPULSE 2025
+                  IMPULSE 2025 • Real-time Data
                 </p>
               </div>
             </div>
@@ -282,14 +248,16 @@ const AdminDashboard = () => {
             <Zap className="w-5 h-5 text-primary" />
             Event-wise Registrations
           </h2>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
             {eventCounts.map((event) => (
               <div
                 key={event.id}
                 className="bg-background/50 border border-primary/10 rounded-lg p-4 text-center"
               >
                 <p className="text-2xl font-display font-bold text-primary">{event.count}</p>
-                <p className="text-sm text-muted-foreground font-mono truncate">{event.name}</p>
+                <p className="text-xs text-muted-foreground font-mono truncate" title={event.name}>
+                  {event.name}
+                </p>
               </div>
             ))}
           </div>
@@ -324,7 +292,7 @@ const AdminDashboard = () => {
               ))}
             </SelectContent>
           </Select>
-          <Button variant="circuit" onClick={exportToCSV}>
+          <Button variant="circuit" onClick={exportToCSV} disabled={filteredRegistrations.length === 0}>
             <Download className="w-4 h-4 mr-2" />
             Export CSV
           </Button>
@@ -370,6 +338,8 @@ const AdminDashboard = () => {
                       className={`px-2 py-1 rounded-full text-xs font-mono ${
                         reg.paymentStatus === 'completed'
                           ? 'bg-green-500/20 text-green-400'
+                          : reg.paymentStatus === 'failed'
+                          ? 'bg-red-500/20 text-red-400'
                           : 'bg-yellow-500/20 text-yellow-400'
                       }`}
                     >
@@ -392,7 +362,11 @@ const AdminDashboard = () => {
 
           {filteredRegistrations.length === 0 && (
             <div className="text-center py-12">
-              <p className="text-muted-foreground font-mono">No registrations found</p>
+              <p className="text-muted-foreground font-mono">
+                {registrations.length === 0
+                  ? 'No registrations yet'
+                  : 'No registrations match your search'}
+              </p>
             </div>
           )}
         </motion.div>
@@ -451,6 +425,8 @@ const AdminDashboard = () => {
                     className={`px-2 py-1 rounded-full text-xs font-mono ${
                       selectedRegistration.paymentStatus === 'completed'
                         ? 'bg-green-500/20 text-green-400'
+                        : selectedRegistration.paymentStatus === 'failed'
+                        ? 'bg-red-500/20 text-red-400'
                         : 'bg-yellow-500/20 text-yellow-400'
                     }`}
                   >
@@ -460,7 +436,7 @@ const AdminDashboard = () => {
                 <div className="flex justify-between">
                   <span className="text-muted-foreground font-mono text-sm">Registered</span>
                   <span className="text-foreground text-sm">
-                    {new Date(selectedRegistration.registeredAt).toLocaleString()}
+                    {formatDate(selectedRegistration.registeredAt)}
                   </span>
                 </div>
               </div>
