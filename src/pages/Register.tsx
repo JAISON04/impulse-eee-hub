@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { ArrowLeft, User, School, Calendar, Phone, Mail, IndianRupee, Zap } from "lucide-react";
@@ -14,7 +14,13 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
-import { addRegistration, generateTransactionId } from "@/lib/firestore";
+import { supabase } from "@/integrations/supabase/client";
+
+declare global {
+  interface Window {
+    Razorpay: any;
+  }
+}
 
 const registrationSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters").max(100),
@@ -55,6 +61,17 @@ const Register = () => {
   
   const event = eventId ? eventsInfo[eventId] : null;
 
+  // Load Razorpay script
+  useEffect(() => {
+    const script = document.createElement("script");
+    script.src = "https://checkout.razorpay.com/v1/checkout.js";
+    script.async = true;
+    document.body.appendChild(script);
+    return () => {
+      document.body.removeChild(script);
+    };
+  }, []);
+
   const {
     register,
     handleSubmit,
@@ -68,46 +85,123 @@ const Register = () => {
     },
   });
 
+  const initiatePayment = async (registrationId: string, orderId: string, keyId: string, amount: number, data: RegistrationFormData) => {
+    const options = {
+      key: keyId,
+      amount: amount,
+      currency: "INR",
+      name: "IMPULSE 2025",
+      description: `Registration for ${event?.title}`,
+      order_id: orderId,
+      handler: async (response: any) => {
+        try {
+          // Verify payment on backend
+          const { data: verifyData, error } = await supabase.functions.invoke("verify-razorpay-payment", {
+            body: {
+              razorpay_order_id: response.razorpay_order_id,
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_signature: response.razorpay_signature,
+              registrationId,
+            },
+          });
+
+          if (error) throw error;
+
+          if (verifyData.success) {
+            toast({
+              title: "Payment Successful!",
+              description: "Your registration is complete.",
+            });
+            navigate("/events");
+          } else {
+            throw new Error(verifyData.error || "Payment verification failed");
+          }
+        } catch (err: any) {
+          console.error("Payment verification error:", err);
+          toast({
+            title: "Payment Verification Failed",
+            description: "Please contact support with your payment ID.",
+            variant: "destructive",
+          });
+        }
+      },
+      prefill: {
+        name: data.name,
+        email: data.email,
+        contact: data.phone,
+      },
+      theme: {
+        color: "#00d4ff",
+      },
+      modal: {
+        ondismiss: () => {
+          setIsSubmitting(false);
+          toast({
+            title: "Payment Cancelled",
+            description: "You can try again when ready.",
+          });
+        },
+      },
+    };
+
+    const razorpay = new window.Razorpay(options);
+    razorpay.open();
+  };
+
   const onSubmit = async (data: RegistrationFormData) => {
     if (!event || !eventId) return;
     
     setIsSubmitting(true);
     
     try {
-      // Save registration to Firestore
-      const registrationId = await addRegistration({
-        name: data.name,
-        email: data.email,
-        phone: `+91 ${data.phone}`,
-        college: data.college,
-        year: yearLabels[data.year] || data.year,
-        event: event.title,
-        eventId: eventId,
-        amount: event.price,
-        paymentStatus: 'pending',
-        transactionId: generateTransactionId(),
-        userId: user?.uid,
+      // First, save registration to database with pending status
+      const transactionId = `TXN${Date.now()}${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
+      
+      const { data: registration, error: insertError } = await supabase
+        .from("registrations")
+        .insert({
+          name: data.name,
+          email: data.email,
+          phone: `+91 ${data.phone}`,
+          college: data.college,
+          year: yearLabels[data.year] || data.year,
+          event: event.title,
+          event_id: eventId,
+          amount: event.price,
+          payment_status: "pending",
+          transaction_id: transactionId,
+          user_id: user?.uid,
+        })
+        .select()
+        .single();
+
+      if (insertError) throw insertError;
+
+      // Create Razorpay order
+      const { data: orderData, error: orderError } = await supabase.functions.invoke("create-razorpay-order", {
+        body: {
+          amount: event.price,
+          receipt: registration.id,
+          notes: {
+            eventId,
+            eventName: event.title,
+            registrationId: registration.id,
+          },
+        },
       });
+
+      if (orderError) throw orderError;
+
+      // Open Razorpay checkout
+      initiatePayment(registration.id, orderData.orderId, orderData.keyId, orderData.amount, data);
       
-      toast({
-        title: "Registration Successful!",
-        description: "You will be redirected to payment shortly.",
-      });
-      
-      // In production, redirect to payment gateway here
-      // For now, simulate a successful payment after delay
-      setTimeout(() => {
-        navigate('/events');
-      }, 2000);
-      
-    } catch (error) {
-      console.error('Registration error:', error);
+    } catch (error: any) {
+      console.error("Registration error:", error);
       toast({
         title: "Registration Failed",
-        description: "Something went wrong. Please try again.",
+        description: error.message || "Something went wrong. Please try again.",
         variant: "destructive",
       });
-    } finally {
       setIsSubmitting(false);
     }
   };

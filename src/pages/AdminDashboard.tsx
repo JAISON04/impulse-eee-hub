@@ -32,8 +32,26 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { useToast } from '@/hooks/use-toast';
-import { subscribeToRegistrations, Registration } from '@/lib/firestore';
-import { Timestamp } from 'firebase/firestore';
+import { supabase } from '@/integrations/supabase/client';
+
+interface Registration {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+  college: string;
+  year: string;
+  event: string;
+  event_id: string;
+  amount: number;
+  payment_status: string;
+  transaction_id: string | null;
+  razorpay_order_id: string | null;
+  razorpay_payment_id: string | null;
+  user_id: string | null;
+  created_at: string;
+  updated_at: string;
+}
 
 const events = [
   { id: 'all', name: 'All Events' },
@@ -58,6 +76,25 @@ const AdminDashboard = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
 
+  const fetchRegistrations = async () => {
+    const { data, error } = await supabase
+      .from('registrations')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Error fetching registrations:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to fetch registrations',
+        variant: 'destructive',
+      });
+    } else {
+      setRegistrations(data || []);
+    }
+    setLoading(false);
+  };
+
   useEffect(() => {
     // Check if admin is authenticated
     const isAdmin = sessionStorage.getItem('isAdmin');
@@ -66,13 +103,24 @@ const AdminDashboard = () => {
       return;
     }
 
-    // Subscribe to real-time updates from Firestore
-    const unsubscribe = subscribeToRegistrations((data) => {
-      setRegistrations(data);
-      setLoading(false);
-    });
+    // Fetch initial data
+    fetchRegistrations();
 
-    return () => unsubscribe();
+    // Subscribe to real-time updates
+    const channel = supabase
+      .channel('registrations-changes')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'registrations' },
+        () => {
+          fetchRegistrations();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [navigate]);
 
   const handleLogout = () => {
@@ -90,31 +138,31 @@ const AdminDashboard = () => {
       reg.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       reg.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
       reg.college.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesEvent = selectedEvent === 'all' || reg.eventId === selectedEvent;
+    const matchesEvent = selectedEvent === 'all' || reg.event_id === selectedEvent;
     return matchesSearch && matchesEvent;
   });
 
   const totalRegistrations = registrations.length;
   const totalAmount = registrations
-    .filter((r) => r.paymentStatus === 'completed')
+    .filter((r) => r.payment_status === 'completed')
     .reduce((sum, r) => sum + r.amount, 0);
   
   const eventCounts = events.slice(1).map((event) => ({
     ...event,
-    count: registrations.filter((r) => r.eventId === event.id).length,
+    count: registrations.filter((r) => r.event_id === event.id).length,
   }));
 
-  const formatDate = (timestamp: Timestamp | undefined) => {
-    if (!timestamp) return 'N/A';
+  const formatDate = (dateString: string | undefined) => {
+    if (!dateString) return 'N/A';
     try {
-      return timestamp.toDate().toLocaleString();
+      return new Date(dateString).toLocaleString();
     } catch {
       return 'N/A';
     }
   };
 
   const exportToCSV = () => {
-    const headers = ['Name', 'Email', 'Phone', 'College', 'Year', 'Event', 'Amount', 'Payment Status', 'Transaction ID', 'Registered At'];
+    const headers = ['Name', 'Email', 'Phone', 'College', 'Year', 'Event', 'Amount', 'Payment Status', 'Transaction ID', 'Razorpay Payment ID', 'Registered At'];
     const csvData = filteredRegistrations.map((reg) => [
       reg.name,
       reg.email,
@@ -123,9 +171,10 @@ const AdminDashboard = () => {
       reg.year,
       reg.event,
       reg.amount,
-      reg.paymentStatus,
-      reg.transactionId,
-      formatDate(reg.registeredAt),
+      reg.payment_status,
+      reg.transaction_id || '',
+      reg.razorpay_payment_id || '',
+      formatDate(reg.created_at),
     ]);
 
     const csvContent = [
@@ -336,14 +385,14 @@ const AdminDashboard = () => {
                   <TableCell>
                     <span
                       className={`px-2 py-1 rounded-full text-xs font-mono ${
-                        reg.paymentStatus === 'completed'
+                        reg.payment_status === 'completed'
                           ? 'bg-green-500/20 text-green-400'
-                          : reg.paymentStatus === 'failed'
+                          : reg.payment_status === 'failed'
                           ? 'bg-red-500/20 text-red-400'
                           : 'bg-yellow-500/20 text-yellow-400'
                       }`}
                     >
-                      {reg.paymentStatus}
+                      {reg.payment_status}
                     </span>
                   </TableCell>
                   <TableCell>
@@ -417,26 +466,32 @@ const AdminDashboard = () => {
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground font-mono text-sm">Transaction ID</span>
-                  <span className="text-foreground font-mono text-sm">{selectedRegistration.transactionId}</span>
+                  <span className="text-foreground font-mono text-sm">{selectedRegistration.transaction_id || 'N/A'}</span>
                 </div>
+                {selectedRegistration.razorpay_payment_id && (
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground font-mono text-sm">Razorpay ID</span>
+                    <span className="text-foreground font-mono text-sm">{selectedRegistration.razorpay_payment_id}</span>
+                  </div>
+                )}
                 <div className="flex justify-between">
                   <span className="text-muted-foreground font-mono text-sm">Status</span>
                   <span
                     className={`px-2 py-1 rounded-full text-xs font-mono ${
-                      selectedRegistration.paymentStatus === 'completed'
+                      selectedRegistration.payment_status === 'completed'
                         ? 'bg-green-500/20 text-green-400'
-                        : selectedRegistration.paymentStatus === 'failed'
+                        : selectedRegistration.payment_status === 'failed'
                         ? 'bg-red-500/20 text-red-400'
                         : 'bg-yellow-500/20 text-yellow-400'
                     }`}
                   >
-                    {selectedRegistration.paymentStatus}
+                    {selectedRegistration.payment_status}
                   </span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground font-mono text-sm">Registered</span>
                   <span className="text-foreground text-sm">
-                    {formatDate(selectedRegistration.registeredAt)}
+                    {formatDate(selectedRegistration.created_at)}
                   </span>
                 </div>
               </div>
