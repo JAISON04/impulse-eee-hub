@@ -82,7 +82,7 @@ const HeroSection = () => {
               </Link>
             </Button>
             <Button variant="outline" size="xl" asChild>
-              <Link to="/register">
+              <Link to="/events">
                 Register Now
               </Link>
             </Button>
