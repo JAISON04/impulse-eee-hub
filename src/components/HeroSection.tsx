@@ -2,6 +2,7 @@ import { motion } from "framer-motion";
 import { Calendar, MapPin, Zap, ArrowRight } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import CountdownTimer from "@/components/CountdownTimer";
 
 const HeroSection = () => {
   return (
@@ -52,7 +53,7 @@ const HeroSection = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.6 }}
-            className="flex flex-wrap justify-center gap-6 mb-10"
+            className="flex flex-wrap justify-center gap-6 mb-6"
           >
             <div className="flex items-center gap-2 text-primary">
               <Calendar className="w-5 h-5" />
@@ -63,6 +64,9 @@ const HeroSection = () => {
               <span className="font-body text-lg">EEE Department</span>
             </div>
           </motion.div>
+
+          {/* Countdown Timer */}
+          <CountdownTimer />
 
           {/* CTA Buttons */}
           <motion.div
