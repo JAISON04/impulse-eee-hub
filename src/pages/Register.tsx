@@ -33,7 +33,7 @@ const registrationSchema = z.object({
 type RegistrationFormData = z.infer<typeof registrationSchema>;
 
 const eventsInfo: Record<string, { title: string; price: number }> = {
-  "circuit-debugging": { title: "Circuit Debugging", price: 150 },
+  "circuit-debugging": { title: "Circuit Debugging", price: 10 },
   "code-surge": { title: "Code Surge", price: 100 },
   "innovolt": { title: "InnoVolt", price: 200 },
   "robo-war": { title: "Robo War", price: 500 },
