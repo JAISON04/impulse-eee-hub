@@ -108,11 +108,28 @@ const Register = () => {
           if (error) throw error;
 
           if (verifyData.success) {
+            // Send confirmation email
+            try {
+              await supabase.functions.invoke("send-confirmation-email", {
+                body: {
+                  name: data.name,
+                  email: data.email,
+                  event: event?.title,
+                  college: data.college,
+                  year: yearLabels[data.year] || data.year,
+                  amount: event?.price,
+                  transactionId: response.razorpay_payment_id,
+                },
+              });
+            } catch (emailError) {
+              console.error("Failed to send confirmation email:", emailError);
+            }
+
             toast({
               title: "Payment Successful!",
-              description: "Your registration is complete.",
+              description: "Your registration is complete. A confirmation email has been sent.",
             });
-            navigate("/events");
+            navigate("/profile");
           } else {
             throw new Error(verifyData.error || "Payment verification failed");
           }

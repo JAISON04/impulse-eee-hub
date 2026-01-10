@@ -14,7 +14,7 @@ const Login = () => {
 
   useEffect(() => {
     if (user && !loading) {
-      navigate('/');
+      navigate('/profile');
     }
   }, [user, loading, navigate]);
 
@@ -25,7 +25,7 @@ const Login = () => {
         title: "Welcome to IMPULSE!",
         description: "You have successfully signed in.",
       });
-      navigate('/');
+      navigate('/profile');
     } catch (error) {
       toast({
         title: "Sign-in failed",
