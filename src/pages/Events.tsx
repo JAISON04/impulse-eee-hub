@@ -10,7 +10,7 @@ const allEvents = [
     id: "circuit-debugging",
     title: "Circuit Debugging",
     description: "Test your troubleshooting skills by identifying and fixing faults in complex circuits. Navigate through various difficulty levels and prove your debugging prowess.",
-    price: 150,
+    price: 10,
     duration: "2 hours",
     teamSize: "2 members",
     category: "Technical",
