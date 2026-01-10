@@ -24,7 +24,7 @@ const eventsData: Record<string, {
     title: "Circuit Debugging",
     description: "Test your troubleshooting skills by identifying and fixing faults in complex circuits.",
     longDescription: "Put your practical knowledge to the test in this hands-on circuit debugging competition. Participants will be given faulty circuits with various issues - from loose connections to component failures. Your task is to diagnose and fix these issues within the time limit. The event features multiple rounds with increasing difficulty, testing your understanding of circuit theory and practical troubleshooting skills.",
-    price: 150,
+    price: 10,
     duration: "2 hours",
     teamSize: "2 members",
     category: "Technical",
