@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 
-const EVENT_DATE = new Date("2025-02-06T09:00:00");
+const EVENT_DATE = new Date("2026-02-06T09:00:00");
 
 interface TimeLeft {
   days: number;
@@ -16,7 +16,7 @@ const CountdownTimer = () => {
   useEffect(() => {
     const calculateTimeLeft = () => {
       const difference = EVENT_DATE.getTime() - new Date().getTime();
-      
+
       if (difference > 0) {
         setTimeLeft({
           days: Math.floor(difference / (1000 * 60 * 60 * 24)),
