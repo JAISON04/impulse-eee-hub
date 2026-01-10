@@ -103,7 +103,7 @@ const handler = async (req: Request): Promise<Response> => {
         Authorization: `Bearer ${RESEND_API_KEY}`,
       },
       body: JSON.stringify({
-        from: "IMPULSE 2025 <onboarding@resend.dev>",
+        from: "IMPULSE 2025 <impulse2025@resend.dev>",
         to: [email],
         subject: `Registration Confirmed - ${event} | IMPULSE 2025`,
         html: emailHtml,
