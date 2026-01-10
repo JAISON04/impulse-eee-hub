@@ -17,6 +17,8 @@ export type Database = {
       registrations: {
         Row: {
           amount: number
+          attendance_marked: boolean
+          attendance_marked_at: string | null
           college: string
           created_at: string
           email: string
@@ -35,6 +37,8 @@ export type Database = {
         }
         Insert: {
           amount: number
+          attendance_marked?: boolean
+          attendance_marked_at?: string | null
           college: string
           created_at?: string
           email: string
@@ -53,6 +57,8 @@ export type Database = {
         }
         Update: {
           amount?: number
+          attendance_marked?: boolean
+          attendance_marked_at?: string | null
           college?: string
           created_at?: string
           email?: string

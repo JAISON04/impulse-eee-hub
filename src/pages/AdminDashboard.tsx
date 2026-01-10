@@ -13,6 +13,10 @@ import {
   Filter,
   Eye,
   RefreshCw,
+  Mail,
+  CheckCircle,
+  Circle,
+  Send,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -51,6 +55,8 @@ interface Registration {
   user_id: string | null;
   created_at: string;
   updated_at: string;
+  attendance_marked: boolean;
+  attendance_marked_at: string | null;
 }
 
 const events = [
@@ -73,6 +79,8 @@ const AdminDashboard = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedEvent, setSelectedEvent] = useState('all');
   const [selectedRegistration, setSelectedRegistration] = useState<Registration | null>(null);
+  const [sendingOD, setSendingOD] = useState<string | null>(null);
+  const [togglingAttendance, setTogglingAttendance] = useState<string | null>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -90,23 +98,20 @@ const AdminDashboard = () => {
         variant: 'destructive',
       });
     } else {
-      setRegistrations(data || []);
+      setRegistrations((data as Registration[]) || []);
     }
     setLoading(false);
   };
 
   useEffect(() => {
-    // Check if admin is authenticated
     const isAdmin = sessionStorage.getItem('isAdmin');
     if (!isAdmin) {
       navigate('/admin');
       return;
     }
 
-    // Fetch initial data
     fetchRegistrations();
 
-    // Subscribe to real-time updates
     const channel = supabase
       .channel('registrations-changes')
       .on(
@@ -133,6 +138,74 @@ const AdminDashboard = () => {
     navigate('/admin');
   };
 
+  const toggleAttendance = async (reg: Registration) => {
+    setTogglingAttendance(reg.id);
+    try {
+      const newStatus = !reg.attendance_marked;
+      const { error } = await supabase
+        .from('registrations')
+        .update({
+          attendance_marked: newStatus,
+          attendance_marked_at: newStatus ? new Date().toISOString() : null,
+        })
+        .eq('id', reg.id);
+
+      if (error) throw error;
+
+      toast({
+        title: newStatus ? "Attendance Marked" : "Attendance Unmarked",
+        description: `${reg.name}'s attendance has been ${newStatus ? 'marked' : 'unmarked'}.`,
+      });
+
+      fetchRegistrations();
+    } catch (error: any) {
+      console.error('Error toggling attendance:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to update attendance',
+        variant: 'destructive',
+      });
+    } finally {
+      setTogglingAttendance(null);
+    }
+  };
+
+  const sendODLetter = async (reg: Registration) => {
+    setSendingOD(reg.id);
+    try {
+      const { data, error } = await supabase.functions.invoke('send-od-letter', {
+        body: {
+          name: reg.name,
+          email: reg.email,
+          college: reg.college,
+          year: reg.year,
+          event: reg.event,
+          eventDate: 'February 6, 2025',
+        },
+      });
+
+      if (error) throw error;
+
+      if (data.success) {
+        toast({
+          title: "OD Letter Sent",
+          description: `OD letter has been sent to ${reg.email}`,
+        });
+      } else {
+        throw new Error(data.error || 'Failed to send OD letter');
+      }
+    } catch (error: any) {
+      console.error('Error sending OD letter:', error);
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to send OD letter',
+        variant: 'destructive',
+      });
+    } finally {
+      setSendingOD(null);
+    }
+  };
+
   const filteredRegistrations = registrations.filter((reg) => {
     const matchesSearch =
       reg.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -146,6 +219,7 @@ const AdminDashboard = () => {
   const totalAmount = registrations
     .filter((r) => r.payment_status === 'completed')
     .reduce((sum, r) => sum + r.amount, 0);
+  const totalAttendance = registrations.filter((r) => r.attendance_marked).length;
   
   const eventCounts = events.slice(1).map((event) => ({
     ...event,
@@ -162,7 +236,7 @@ const AdminDashboard = () => {
   };
 
   const exportToCSV = () => {
-    const headers = ['Name', 'Email', 'Phone', 'College', 'Year', 'Event', 'Amount', 'Payment Status', 'Transaction ID', 'Razorpay Payment ID', 'Registered At'];
+    const headers = ['Name', 'Email', 'Phone', 'College', 'Year', 'Event', 'Amount', 'Payment Status', 'Attendance', 'Transaction ID', 'Razorpay Payment ID', 'Registered At'];
     const csvData = filteredRegistrations.map((reg) => [
       reg.name,
       reg.email,
@@ -172,6 +246,7 @@ const AdminDashboard = () => {
       reg.event,
       reg.amount,
       reg.payment_status,
+      reg.attendance_marked ? 'Present' : 'Absent',
       reg.transaction_id || '',
       reg.razorpay_payment_id || '',
       formatDate(reg.created_at),
@@ -234,7 +309,7 @@ const AdminDashboard = () => {
 
       <main className="container mx-auto px-4 py-8">
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -264,6 +339,23 @@ const AdminDashboard = () => {
               <div>
                 <p className="text-muted-foreground text-sm font-mono">Total Collected</p>
                 <p className="text-3xl font-display font-bold text-foreground">₹{totalAmount}</p>
+              </div>
+            </div>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.15 }}
+            className="bg-card border border-green-500/20 rounded-xl p-6"
+          >
+            <div className="flex items-center gap-4">
+              <div className="p-3 bg-green-500/10 rounded-lg">
+                <CheckCircle className="w-6 h-6 text-green-500" />
+              </div>
+              <div>
+                <p className="text-muted-foreground text-sm font-mono">Attendance</p>
+                <p className="text-3xl font-display font-bold text-foreground">{totalAttendance}/{totalRegistrations}</p>
               </div>
             </div>
           </motion.div>
@@ -357,6 +449,7 @@ const AdminDashboard = () => {
           <Table>
             <TableHeader>
               <TableRow className="border-primary/20 hover:bg-primary/5">
+                <TableHead className="font-mono text-primary">Attendance</TableHead>
                 <TableHead className="font-mono text-primary">Name</TableHead>
                 <TableHead className="font-mono text-primary">College</TableHead>
                 <TableHead className="font-mono text-primary">Event</TableHead>
@@ -368,6 +461,23 @@ const AdminDashboard = () => {
             <TableBody>
               {filteredRegistrations.map((reg) => (
                 <TableRow key={reg.id} className="border-primary/10 hover:bg-primary/5">
+                  <TableCell>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => toggleAttendance(reg)}
+                      disabled={togglingAttendance === reg.id || reg.payment_status !== 'completed'}
+                      className={reg.attendance_marked ? 'text-green-500' : 'text-muted-foreground'}
+                    >
+                      {togglingAttendance === reg.id ? (
+                        <RefreshCw className="w-5 h-5 animate-spin" />
+                      ) : reg.attendance_marked ? (
+                        <CheckCircle className="w-5 h-5" />
+                      ) : (
+                        <Circle className="w-5 h-5" />
+                      )}
+                    </Button>
+                  </TableCell>
                   <TableCell>
                     <div>
                       <p className="font-medium text-foreground">{reg.name}</p>
@@ -396,13 +506,30 @@ const AdminDashboard = () => {
                     </span>
                   </TableCell>
                   <TableCell>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setSelectedRegistration(reg)}
-                    >
-                      <Eye className="w-4 h-4" />
-                    </Button>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setSelectedRegistration(reg)}
+                        title="View Details"
+                      >
+                        <Eye className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => sendODLetter(reg)}
+                        disabled={sendingOD === reg.id || reg.payment_status !== 'completed'}
+                        title="Send OD Letter"
+                        className="text-primary hover:text-primary"
+                      >
+                        {sendingOD === reg.id ? (
+                          <RefreshCw className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <Send className="w-4 h-4" />
+                        )}
+                      </Button>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}
@@ -429,7 +556,7 @@ const AdminDashboard = () => {
             <motion.div
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
-              className="bg-card border border-primary/30 rounded-xl p-6 max-w-md w-full"
+              className="bg-card border border-primary/30 rounded-xl p-6 max-w-md w-full max-h-[90vh] overflow-y-auto"
               onClick={(e) => e.stopPropagation()}
             >
               <h3 className="font-display text-xl font-bold text-foreground mb-4">
@@ -489,19 +616,54 @@ const AdminDashboard = () => {
                   </span>
                 </div>
                 <div className="flex justify-between">
+                  <span className="text-muted-foreground font-mono text-sm">Attendance</span>
+                  <span className={`flex items-center gap-1 ${selectedRegistration.attendance_marked ? 'text-green-400' : 'text-muted-foreground'}`}>
+                    {selectedRegistration.attendance_marked ? (
+                      <>
+                        <CheckCircle className="w-4 h-4" /> Present
+                      </>
+                    ) : (
+                      <>
+                        <Circle className="w-4 h-4" /> Absent
+                      </>
+                    )}
+                  </span>
+                </div>
+                <div className="flex justify-between">
                   <span className="text-muted-foreground font-mono text-sm">Registered</span>
                   <span className="text-foreground text-sm">
                     {formatDate(selectedRegistration.created_at)}
                   </span>
                 </div>
               </div>
-              <Button
-                variant="circuit"
-                className="w-full mt-6"
-                onClick={() => setSelectedRegistration(null)}
-              >
-                Close
-              </Button>
+              <div className="flex gap-3 mt-6">
+                <Button
+                  variant="circuit"
+                  className="flex-1"
+                  onClick={() => {
+                    sendODLetter(selectedRegistration);
+                  }}
+                  disabled={sendingOD === selectedRegistration.id || selectedRegistration.payment_status !== 'completed'}
+                >
+                  {sendingOD === selectedRegistration.id ? (
+                    <>
+                      <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                      Sending...
+                    </>
+                  ) : (
+                    <>
+                      <Mail className="w-4 h-4 mr-2" />
+                      Send OD Letter
+                    </>
+                  )}
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => setSelectedRegistration(null)}
+                >
+                  Close
+                </Button>
+              </div>
             </motion.div>
           </div>
         )}
