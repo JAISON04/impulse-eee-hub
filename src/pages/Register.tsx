@@ -34,15 +34,15 @@ type RegistrationFormData = z.infer<typeof registrationSchema>;
 
 const eventsInfo: Record<string, { title: string; price: number }> = {
   "circuit-debugging": { title: "Circuit Debugging", price: 10 },
-  "code-surge": { title: "Code Surge", price: 100 },
-  "innovolt": { title: "InnoVolt", price: 200 },
-  "robo-war": { title: "Robo War", price: 500 },
-  "tech-quiz": { title: "ElectroQuiz", price: 100 },
-  "project-expo": { title: "Project Expo", price: 250 },
-  "power-systems": { title: "Power Grid Challenge", price: 150 },
-  "safety-protocol": { title: "Safety First", price: 100 },
-  "speed-wiring": { title: "Speed Wiring", price: 150 },
-  "treasure-hunt": { title: "Electro Treasure Hunt", price: 100 },
+  "code-surge": { title: "Code Surge", price: 10 },
+  "innovolt": { title: "InnoVolt", price: 10 },
+  "robo-war": { title: "Robo War", price: 10 },
+  "tech-quiz": { title: "ElectroQuiz", price: 10 },
+  "project-expo": { title: "Project Expo", price: 10 },
+  "power-systems": { title: "Power Grid Challenge", price: 10 },
+  "safety-protocol": { title: "Safety First", price: 10 },
+  "speed-wiring": { title: "Speed Wiring", price: 10 },
+  "treasure-hunt": { title: "Electro Treasure Hunt", price: 10 },
 };
 
 const yearLabels: Record<string, string> = {
