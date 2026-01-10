@@ -48,7 +48,7 @@ const Login = () => {
   return (
     <div className="min-h-screen bg-background flex items-center justify-center relative overflow-hidden">
       <CircuitBackground />
-      
+
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -70,7 +70,7 @@ const Login = () => {
               IMPULSE
             </h1>
             <p className="text-muted-foreground font-mono text-sm">
-              EEE Department Symposium 2025
+              EEE Department Symposium 2026
             </p>
           </div>
 

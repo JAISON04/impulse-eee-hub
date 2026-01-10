@@ -180,7 +180,7 @@ const AdminDashboard = () => {
           college: reg.college,
           year: reg.year,
           event: reg.event,
-          eventDate: 'February 6, 2025',
+          eventDate: 'February 6, 2026',
         },
       });
 
@@ -220,7 +220,7 @@ const AdminDashboard = () => {
     .filter((r) => r.payment_status === 'completed')
     .reduce((sum, r) => sum + r.amount, 0);
   const totalAttendance = registrations.filter((r) => r.attendance_marked).length;
-  
+
   const eventCounts = events.slice(1).map((event) => ({
     ...event,
     count: registrations.filter((r) => r.event_id === event.id).length,
@@ -295,7 +295,7 @@ const AdminDashboard = () => {
                   Admin Dashboard
                 </h1>
                 <p className="text-muted-foreground text-sm font-mono">
-                  IMPULSE 2025 • Real-time Data
+                  IMPULSE 2026 • Real-time Data
                 </p>
               </div>
             </div>
@@ -494,13 +494,12 @@ const AdminDashboard = () => {
                   <TableCell className="font-mono text-foreground">₹{reg.amount}</TableCell>
                   <TableCell>
                     <span
-                      className={`px-2 py-1 rounded-full text-xs font-mono ${
-                        reg.payment_status === 'completed'
+                      className={`px-2 py-1 rounded-full text-xs font-mono ${reg.payment_status === 'completed'
                           ? 'bg-green-500/20 text-green-400'
                           : reg.payment_status === 'failed'
-                          ? 'bg-red-500/20 text-red-400'
-                          : 'bg-yellow-500/20 text-yellow-400'
-                      }`}
+                            ? 'bg-red-500/20 text-red-400'
+                            : 'bg-yellow-500/20 text-yellow-400'
+                        }`}
                     >
                       {reg.payment_status}
                     </span>
@@ -604,13 +603,12 @@ const AdminDashboard = () => {
                 <div className="flex justify-between">
                   <span className="text-muted-foreground font-mono text-sm">Status</span>
                   <span
-                    className={`px-2 py-1 rounded-full text-xs font-mono ${
-                      selectedRegistration.payment_status === 'completed'
+                    className={`px-2 py-1 rounded-full text-xs font-mono ${selectedRegistration.payment_status === 'completed'
                         ? 'bg-green-500/20 text-green-400'
                         : selectedRegistration.payment_status === 'failed'
-                        ? 'bg-red-500/20 text-red-400'
-                        : 'bg-yellow-500/20 text-yellow-400'
-                    }`}
+                          ? 'bg-red-500/20 text-red-400'
+                          : 'bg-yellow-500/20 text-yellow-400'
+                      }`}
                   >
                     {selectedRegistration.payment_status}
                   </span>

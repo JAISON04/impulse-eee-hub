@@ -37,7 +37,7 @@ const handler = async (req: Request): Promise<Response> => {
         <div style="max-width: 600px; margin: 0 auto; padding: 40px 20px;">
           <div style="text-align: center; margin-bottom: 40px;">
             <div style="display: inline-block; background: linear-gradient(135deg, #00d4ff, #ff00ff); padding: 15px 30px; border-radius: 50px;">
-              <h1 style="margin: 0; color: #0a0a0f; font-size: 28px; font-weight: bold;">⚡ IMPULSE 2025</h1>
+              <h1 style="margin: 0; color: #0a0a0f; font-size: 28px; font-weight: bold;">⚡ IMPULSE 2026</h1>
             </div>
             <p style="color: #888; margin-top: 15px; font-size: 14px;">EEE Department Symposium</p>
           </div>
@@ -81,14 +81,14 @@ const handler = async (req: Request): Promise<Response> => {
           </div>
           
           <div style="background: linear-gradient(135deg, rgba(255, 0, 255, 0.1), rgba(0, 212, 255, 0.1)); border: 1px solid rgba(255, 0, 255, 0.3); border-radius: 16px; padding: 25px; margin-bottom: 30px; text-align: center;">
-            <h3 style="color: #ff00ff; margin: 0 0 10px 0;">📅 February 6, 2025</h3>
+            <h3 style="color: #ff00ff; margin: 0 0 10px 0;">📅 February 6, 2026</h3>
             <p style="color: #e0e0e0; margin: 0;">Department of Electrical and Electronics Engineering</p>
           </div>
           
           <div style="text-align: center; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.1);">
             <p style="color: #666; font-size: 12px; margin: 0;">
-              For any queries, contact us at impulse2025@eee.edu<br><br>
-              © 2025 IMPULSE - EEE Department Symposium
+              For any queries, contact us at impulse2026@eee.edu<br><br>
+              © 2026 IMPULSE - EEE Department Symposium
             </p>
           </div>
         </div>
@@ -103,9 +103,9 @@ const handler = async (req: Request): Promise<Response> => {
         Authorization: `Bearer ${RESEND_API_KEY}`,
       },
       body: JSON.stringify({
-        from: "IMPULSE 2025 <impulse2025@resend.dev>",
+        from: "IMPULSE 2026 <impulse2026@resend.dev>",
         to: [email],
-        subject: `Registration Confirmed - ${event} | IMPULSE 2025`,
+        subject: `Registration Confirmed - ${event} | IMPULSE 2026`,
         html: emailHtml,
       }),
     });

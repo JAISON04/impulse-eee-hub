@@ -58,7 +58,7 @@ const Register = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  
+
   const event = eventId ? eventsInfo[eventId] : null;
 
   // Load Razorpay script
@@ -90,7 +90,7 @@ const Register = () => {
       key: keyId,
       amount: amount,
       currency: "INR",
-      name: "IMPULSE 2025",
+      name: "IMPULSE 2026",
       description: `Registration for ${event?.title}`,
       order_id: orderId,
       handler: async (response: any) => {
@@ -167,13 +167,13 @@ const Register = () => {
 
   const onSubmit = async (data: RegistrationFormData) => {
     if (!event || !eventId) return;
-    
+
     setIsSubmitting(true);
-    
+
     try {
       // First, save registration to database with pending status
       const transactionId = `TXN${Date.now()}${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
-      
+
       const { data: registration, error: insertError } = await supabase
         .from("registrations")
         .insert({
@@ -211,7 +211,7 @@ const Register = () => {
 
       // Open Razorpay checkout
       initiatePayment(registration.id, orderData.orderId, orderData.keyId, orderData.amount, data);
-      
+
     } catch (error: any) {
       console.error("Registration error:", error);
       toast({
@@ -407,7 +407,7 @@ const Register = () => {
             transition={{ delay: 0.3 }}
             className="text-center text-muted-foreground text-sm mt-6 font-body"
           >
-            By registering, you agree to our terms and conditions. 
+            By registering, you agree to our terms and conditions.
             Payment confirmation will be sent to your email.
           </motion.p>
         </div>

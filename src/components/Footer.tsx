@@ -15,7 +15,7 @@ const Footer = () => {
               </span>
             </Link>
             <p className="text-muted-foreground font-body text-sm mb-4">
-              The premier technical symposium of the Department of Electrical 
+              The premier technical symposium of the Department of Electrical
               and Electronics Engineering.
             </p>
             <div className="flex gap-4">
@@ -94,7 +94,7 @@ const Footer = () => {
         {/* Bottom Bar */}
         <div className="border-t border-primary/20 pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
           <p className="text-muted-foreground font-body text-sm text-center md:text-left">
-            © 2025 IMPULSE - EEE Technical Symposium. All rights reserved.
+            © 2026 IMPULSE - EEE Technical Symposium. All rights reserved.
           </p>
           <div className="flex gap-6">
             <Link to="/privacy" className="text-muted-foreground hover:text-primary text-sm font-body">

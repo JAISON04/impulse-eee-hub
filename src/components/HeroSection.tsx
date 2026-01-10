@@ -43,8 +43,8 @@ const HeroSection = () => {
             transition={{ duration: 0.8, delay: 0.4 }}
             className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-8 font-body"
           >
-            Experience the electrifying fusion of innovation and technology. 
-            Join us for a day of technical events, workshops, and networking 
+            Experience the electrifying fusion of innovation and technology.
+            Join us for a day of technical events, workshops, and networking
             that will power up your engineering journey.
           </motion.p>
 
@@ -57,7 +57,7 @@ const HeroSection = () => {
           >
             <div className="flex items-center gap-2 text-primary">
               <Calendar className="w-5 h-5" />
-              <span className="font-body text-lg">February 6, 2025</span>
+              <span className="font-body text-lg">February 6, 2026</span>
             </div>
             <div className="flex items-center gap-2 text-primary">
               <MapPin className="w-5 h-5" />

@@ -55,7 +55,7 @@ const About = () => {
               <span className="text-gradient-electric">Powering Innovation</span>
             </h1>
             <p className="text-muted-foreground max-w-2xl mx-auto font-body text-lg">
-              IMPULSE is the flagship technical symposium of the Department of Electrical and 
+              IMPULSE is the flagship technical symposium of the Department of Electrical and
               Electronics Engineering, bringing together the brightest minds in the field.
             </p>
           </motion.div>
@@ -74,15 +74,15 @@ const About = () => {
                   <h2 className="font-display text-2xl font-bold">What is IMPULSE?</h2>
                 </div>
                 <p className="text-muted-foreground font-body mb-4 leading-relaxed">
-                  IMPULSE is more than just a symposium—it's a celebration of electrical and 
-                  electronics engineering. Since its inception, IMPULSE has been the premier 
-                  platform for students to showcase their talents, learn from industry experts, 
+                  IMPULSE is more than just a symposium—it's a celebration of electrical and
+                  electronics engineering. Since its inception, IMPULSE has been the premier
+                  platform for students to showcase their talents, learn from industry experts,
                   and network with like-minded individuals.
                 </p>
                 <p className="text-muted-foreground font-body leading-relaxed">
-                  This year, we're back bigger and better with exciting technical events, 
-                  hands-on workshops, and opportunities to win amazing prizes. Whether you're 
-                  a circuit enthusiast, a coding wizard, or a robotics fanatic, IMPULSE has 
+                  This year, we're back bigger and better with exciting technical events,
+                  hands-on workshops, and opportunities to win amazing prizes. Whether you're
+                  a circuit enthusiast, a coding wizard, or a robotics fanatic, IMPULSE has
                   something for everyone.
                 </p>
               </div>
@@ -133,7 +133,7 @@ const About = () => {
               <span className="text-gradient-electric">Our Team</span>
             </h2>
             <p className="text-muted-foreground font-body">
-              The passionate individuals behind IMPULSE 2025
+              The passionate individuals behind IMPULSE 2026
             </p>
           </motion.div>
 
