@@ -85,6 +85,10 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
+    if (!BREVO_API_KEY) {
+      throw new Error("BREVO_API_KEY is not configured");
+    }
+
     const data: ODLetterRequest = await req.json();
     const odLetterHTML = generateODLetterHTML(data);
 
@@ -125,14 +129,17 @@ const handler = async (req: Request): Promise<Response> => {
       </html>
     `;
 
+    console.log("Sending OD letter to:", data.email);
+
     const res = await fetch("https://api.brevo.com/v3/smtp/email", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "api-key": BREVO_API_KEY!,
+        "accept": "application/json",
+        "api-key": BREVO_API_KEY,
       },
       body: JSON.stringify({
-        sender: { name: "IMPULSE 2026", email: "noreply@impulse2026.com" },
+        sender: { name: "IMPULSE 2026", email: "impulse2026@gmail.com" },
         to: [{ email: data.email, name: data.name }],
         subject: `OD Letter - ${data.event} | IMPULSE 2026`,
         htmlContent: emailHtml,
@@ -140,10 +147,11 @@ const handler = async (req: Request): Promise<Response> => {
     });
 
     const responseData = await res.json();
-    console.log("OD Letter email sent:", responseData);
+    console.log("Brevo API response:", JSON.stringify(responseData));
 
     if (!res.ok) {
-      throw new Error(responseData.message || "Failed to send email");
+      console.error("Brevo API error:", responseData);
+      throw new Error(responseData.message || `Brevo API error: ${res.status}`);
     }
 
     return new Response(JSON.stringify({ success: true, data: responseData }), {
