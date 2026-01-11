@@ -139,7 +139,7 @@ const handler = async (req: Request): Promise<Response> => {
         "api-key": BREVO_API_KEY,
       },
       body: JSON.stringify({
-        sender: { name: "IMPULSE 2026", email: "impulse2026@gmail.com" },
+        sender: { name: "IMPULSE 2026", email: "no-reply@brevo.com" },
         to: [{ email: data.email, name: data.name }],
         subject: `OD Letter - ${data.event} | IMPULSE 2026`,
         htmlContent: emailHtml,
