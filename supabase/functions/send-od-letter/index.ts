@@ -1,6 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
-const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
+const BREVO_API_KEY = Deno.env.get("BREVO_API_KEY");
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -125,17 +125,17 @@ const handler = async (req: Request): Promise<Response> => {
       </html>
     `;
 
-    const res = await fetch("https://api.resend.com/emails", {
+    const res = await fetch("https://api.brevo.com/v3/smtp/email", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${RESEND_API_KEY}`,
+        "api-key": BREVO_API_KEY!,
       },
       body: JSON.stringify({
-        from: "IMPULSE 2026 <onboarding@resend.dev>",
-        to: [data.email],
+        sender: { name: "IMPULSE 2026", email: "noreply@impulse2026.com" },
+        to: [{ email: data.email, name: data.name }],
         subject: `OD Letter - ${data.event} | IMPULSE 2026`,
-        html: emailHtml,
+        htmlContent: emailHtml,
       }),
     });
 
