@@ -17,6 +17,8 @@ import {
   CheckCircle,
   Circle,
   Send,
+  Plus,
+  UserPlus,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -27,6 +29,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
 import {
   Table,
   TableBody,
@@ -81,6 +91,18 @@ const AdminDashboard = () => {
   const [selectedRegistration, setSelectedRegistration] = useState<Registration | null>(null);
   const [sendingOD, setSendingOD] = useState<string | null>(null);
   const [togglingAttendance, setTogglingAttendance] = useState<string | null>(null);
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [addingRegistration, setAddingRegistration] = useState(false);
+  const [newRegistration, setNewRegistration] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    college: '',
+    year: '',
+    event_id: '',
+    amount: 0,
+    payment_status: 'completed',
+  });
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -203,6 +225,68 @@ const AdminDashboard = () => {
       });
     } finally {
       setSendingOD(null);
+    }
+  };
+
+  const handleAddRegistration = async () => {
+    if (!newRegistration.name || !newRegistration.email || !newRegistration.phone || 
+        !newRegistration.college || !newRegistration.year || !newRegistration.event_id) {
+      toast({
+        title: 'Error',
+        description: 'Please fill in all required fields',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setAddingRegistration(true);
+    try {
+      const selectedEventData = events.find(e => e.id === newRegistration.event_id);
+      const eventName = selectedEventData?.name || newRegistration.event_id;
+      
+      const { error } = await supabase
+        .from('registrations')
+        .insert({
+          name: newRegistration.name,
+          email: newRegistration.email,
+          phone: newRegistration.phone,
+          college: newRegistration.college,
+          year: newRegistration.year,
+          event_id: newRegistration.event_id,
+          event: eventName,
+          amount: newRegistration.amount,
+          payment_status: newRegistration.payment_status,
+          transaction_id: `MANUAL-${Date.now()}`,
+        });
+
+      if (error) throw error;
+
+      toast({
+        title: 'Registration Added',
+        description: `${newRegistration.name} has been registered for ${eventName}`,
+      });
+
+      setNewRegistration({
+        name: '',
+        email: '',
+        phone: '',
+        college: '',
+        year: '',
+        event_id: '',
+        amount: 0,
+        payment_status: 'completed',
+      });
+      setShowAddModal(false);
+      fetchRegistrations();
+    } catch (error: any) {
+      console.error('Error adding registration:', error);
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to add registration',
+        variant: 'destructive',
+      });
+    } finally {
+      setAddingRegistration(false);
     }
   };
 
@@ -437,6 +521,146 @@ const AdminDashboard = () => {
             <Download className="w-4 h-4 mr-2" />
             Export CSV
           </Button>
+          
+          <Dialog open={showAddModal} onOpenChange={setShowAddModal}>
+            <DialogTrigger asChild>
+              <Button variant="default" className="bg-primary hover:bg-primary/90">
+                <UserPlus className="w-4 h-4 mr-2" />
+                Add Manual Registration
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2">
+                  <UserPlus className="w-5 h-5 text-primary" />
+                  Manual Registration
+                </DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4 mt-4">
+                <div className="space-y-2">
+                  <Label htmlFor="name">Name *</Label>
+                  <Input
+                    id="name"
+                    placeholder="Enter full name"
+                    value={newRegistration.name}
+                    onChange={(e) => setNewRegistration({ ...newRegistration, name: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="email">Email *</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="Enter email address"
+                    value={newRegistration.email}
+                    onChange={(e) => setNewRegistration({ ...newRegistration, email: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="phone">Phone *</Label>
+                  <Input
+                    id="phone"
+                    placeholder="Enter phone number"
+                    value={newRegistration.phone}
+                    onChange={(e) => setNewRegistration({ ...newRegistration, phone: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="college">College *</Label>
+                  <Input
+                    id="college"
+                    placeholder="Enter college name"
+                    value={newRegistration.college}
+                    onChange={(e) => setNewRegistration({ ...newRegistration, college: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="year">Year *</Label>
+                  <Select
+                    value={newRegistration.year}
+                    onValueChange={(value) => setNewRegistration({ ...newRegistration, year: value })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select year" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="1st Year">1st Year</SelectItem>
+                      <SelectItem value="2nd Year">2nd Year</SelectItem>
+                      <SelectItem value="3rd Year">3rd Year</SelectItem>
+                      <SelectItem value="4th Year">4th Year</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="event">Event *</Label>
+                  <Select
+                    value={newRegistration.event_id}
+                    onValueChange={(value) => setNewRegistration({ ...newRegistration, event_id: value })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select event" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {events.slice(1).map((event) => (
+                        <SelectItem key={event.id} value={event.id}>
+                          {event.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="amount">Amount (₹)</Label>
+                  <Input
+                    id="amount"
+                    type="number"
+                    placeholder="Enter amount"
+                    value={newRegistration.amount}
+                    onChange={(e) => setNewRegistration({ ...newRegistration, amount: parseInt(e.target.value) || 0 })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="status">Payment Status</Label>
+                  <Select
+                    value={newRegistration.payment_status}
+                    onValueChange={(value) => setNewRegistration({ ...newRegistration, payment_status: value })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="completed">Completed</SelectItem>
+                      <SelectItem value="pending">Pending</SelectItem>
+                      <SelectItem value="failed">Failed</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="flex gap-3 pt-4">
+                  <Button
+                    variant="circuit"
+                    className="flex-1"
+                    onClick={handleAddRegistration}
+                    disabled={addingRegistration}
+                  >
+                    {addingRegistration ? (
+                      <>
+                        <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                        Adding...
+                      </>
+                    ) : (
+                      <>
+                        <Plus className="w-4 h-4 mr-2" />
+                        Add Registration
+                      </>
+                    )}
+                  </Button>
+                  <Button variant="outline" onClick={() => setShowAddModal(false)}>
+                    Cancel
+                  </Button>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
         </motion.div>
 
         {/* Registrations Table */}
