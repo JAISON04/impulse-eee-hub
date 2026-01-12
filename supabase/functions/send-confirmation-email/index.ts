@@ -110,7 +110,7 @@ const handler = async (req: Request): Promise<Response> => {
         "api-key": BREVO_API_KEY,
       },
       body: JSON.stringify({
-        sender: { name: "IMPULSE 2026", email: "jaisonbinufrankj.eee2023@citchennai.net" },
+        sender: { name: "IMPULSE 2026", email: "onboarding@brevo.com" },
         to: [{ email: email, name: name }],
         subject: `Registration Confirmed - ${event} | IMPULSE 2026`,
         htmlContent: emailHtml,
